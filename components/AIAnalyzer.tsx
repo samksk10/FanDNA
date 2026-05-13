@@ -15,8 +15,12 @@ export default function AIAnalyzer() {
     const [phrase, setPhrase] = useState(0);
 
     useEffect(() => {
+        const interval = setInterval(() => {
+            setPhrase((prev) => (prev + 1) % phrases.length);
+        }, 2000);
+
         return () => clearInterval(interval);
-    }, []);
+    }, [phrases.length]);
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4">
