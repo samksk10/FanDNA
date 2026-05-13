@@ -1,0 +1,2 @@
+# FanDNA
+app for IA
