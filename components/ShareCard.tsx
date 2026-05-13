@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { Download, Share2 } from 'lucide-react';
+import { useRef } from 'react';
+import html2canvas from 'html2canvas';
 
 interface ShareCardProps {
     username: string;
@@ -14,12 +16,42 @@ export default function ShareCard({
     identity,
     trait,
 }: ShareCardProps) {
+    const cardRef = useRef<HTMLDivElement>(null);
+
     const handleShare = async () => {
         if (navigator.share) {
-            await navigator.share({
-                title: 'FanDNA - My Bundesliga Identity',
-                text: `I'm "${identity}" on FanDNA! Discover your unique football identity.`,
+            try {
+                await navigator.share({
+                    title: 'FanDNA - My Bundesliga Identity',
+                    text: `I'm "${identity}" on FanDNA! Discover your unique football identity.`,
+                });
+            } catch (error) {
+                console.log('Share cancelled or failed');
+            }
+        } else {
+            // Fallback: copy to clipboard
+            const text = `I'm "${identity}" on FanDNA! Discover your unique football identity.`;
+            navigator.clipboard.writeText(text);
+            alert('Shared! (Text copied to clipboard)');
+        }
+    };
+
+    const handleDownload = async () => {
+        if (!cardRef.current) return;
+
+        try {
+            const canvas = await html2canvas(cardRef.current, {
+                backgroundColor: '#0a0e27',
+                scale: 2,
+                logging: false,
             });
+            const link = document.createElement('a');
+            link.href = canvas.toDataURL('image/png');
+            link.download = `FanDNA-${username}-${identity}.png`;
+            link.click();
+        } catch (error) {
+            console.error('Download failed:', error);
+            alert('Failed to download card');
         }
     };
 
@@ -31,7 +63,10 @@ export default function ShareCard({
             className="w-full max-w-md mx-auto"
         >
             {/* Card */}
-            <div className="glass border-2 border-neon-cyan/40 rounded-3xl p-8 text-center neon-glow-cyan relative overflow-hidden">
+            <div
+                ref={cardRef}
+                className="glass border-2 border-neon-cyan/40 rounded-3xl p-8 text-center neon-glow-cyan relative overflow-hidden"
+            >
                 {/* Background Blur */}
                 <div className="absolute inset-0 bg-gradient-to-br from-neon-cyan/5 via-transparent to-neon-purple/5" />
 
@@ -96,6 +131,7 @@ export default function ShareCard({
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
+                            onClick={handleDownload}
                             className="flex items-center gap-2 px-6 py-3 bg-gradient-neon text-black font-bold rounded-lg hover:shadow-glow-cyan transition-smooth"
                         >
                             <Download size={18} />

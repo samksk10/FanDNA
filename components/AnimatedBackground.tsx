@@ -1,15 +1,22 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 
 export default function AnimatedBackground() {
-    const particles = Array.from({ length: 20 }).map((_, i) => ({
-        id: i,
-        left: Math.random() * 100,
-        top: Math.random() * 100,
-        delay: Math.random() * 0.5,
-        duration: 3 + Math.random() * 2,
-    }));
+    const [particles, setParticles] = useState([]);
+
+    useEffect(() => {
+        setParticles(
+            Array.from({ length: 20 }).map((_, i) => ({
+                id: i,
+                left: Math.random() * 100,
+                top: Math.random() * 100,
+                delay: Math.random() * 0.5,
+                duration: 3 + Math.random() * 2,
+            }))
+        );
+    }, []);
 
     return (
         <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
