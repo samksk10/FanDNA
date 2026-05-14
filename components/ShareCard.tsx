@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Download, Share2 } from 'lucide-react';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 
 interface ShareCardProps {
@@ -17,41 +17,68 @@ export default function ShareCard({
     trait,
 }: ShareCardProps) {
     const cardRef = useRef<HTMLDivElement>(null);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     const handleShare = async () => {
+        const text = `I'm "${identity}" on FanDNA! Discover your unique football identity.`;
+
         if (navigator.share) {
             try {
                 await navigator.share({
                     title: 'FanDNA - My Bundesliga Identity',
-                    text: `I'm "${identity}" on FanDNA! Discover your unique football identity.`,
+                    text: text,
                 });
             } catch (error) {
                 console.log('Share cancelled or failed');
             }
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+            try {
+                await navigator.clipboard.writeText(text);
+                alert('Shared! (Text copied to clipboard)');
+            } catch (error) {
+                console.error('Clipboard copy failed:', error);
+                alert('Failed to copy to clipboard');
+            }
         } else {
-            // Fallback: copy to clipboard
-            const text = `I'm "${identity}" on FanDNA! Discover your unique football identity.`;
-            navigator.clipboard.writeText(text);
-            alert('Shared! (Text copied to clipboard)');
+            // Final fallback
+            alert(`Share this: ${text}`);
         }
     };
 
     const handleDownload = async () => {
-        if (!cardRef.current) return;
+        if (!cardRef.current || isDownloading) return;
+
+        setIsDownloading(true);
 
         try {
             const canvas = await html2canvas(cardRef.current, {
                 backgroundColor: '#0a0e27',
                 scale: 2,
                 logging: false,
+                allowTaint: true,
+                useCORS: true,
             });
-            const link = document.createElement('a');
-            link.href = canvas.toDataURL('image/png');
-            link.download = `FanDNA-${username}-${identity}.png`;
-            link.click();
+
+            canvas.toBlob((blob) => {
+                if (!blob) {
+                    throw new Error('Failed to create image blob');
+                }
+
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `FanDNA-${username}-${identity}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                setIsDownloading(false);
+            }, 'image/png', 1);
         } catch (error) {
             console.error('Download failed:', error);
-            alert('Failed to download card');
+            setIsDownloading(false);
+            alert('Failed to download card. Please try again.');
         }
     };
 
@@ -129,13 +156,19 @@ export default function ShareCard({
                             <span className="text-sm font-medium">Share</span>
                         </motion.button>
                         <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                            whileHover={!isDownloading ? { scale: 1.05 } : {}}
+                            whileTap={!isDownloading ? { scale: 0.95 } : {}}
                             onClick={handleDownload}
-                            className="flex items-center gap-2 px-6 py-3 bg-gradient-neon text-black font-bold rounded-lg hover:shadow-glow-cyan transition-smooth"
+                            disabled={isDownloading}
+                            className={`flex items-center gap-2 px-6 py-3 font-bold rounded-lg transition-smooth ${isDownloading
+                                ? 'bg-gradient-neon/50 text-black/50 cursor-not-allowed'
+                                : 'bg-gradient-neon text-black hover:shadow-glow-cyan'
+                                }`}
                         >
                             <Download size={18} />
-                            <span className="text-sm font-medium">Download</span>
+                            <span className="text-sm font-medium">
+                                {isDownloading ? 'Downloading...' : 'Download'}
+                            </span>
                         </motion.button>
                     </div>
                 </div>
