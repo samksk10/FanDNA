@@ -77,7 +77,7 @@ export default function Footer() {
                 {/* Copyright */}
                 <div className="text-center">
                     <p className="text-sm text-gray-500">
-                        © 2024 Samuel KISENGE. All rights reserved. Football passion, powered by AI.
+                        © 2026 Samuel KISENGE. All rights reserved. Football passion, powered by AI.
                     </p>
                 </div>
             </div>
